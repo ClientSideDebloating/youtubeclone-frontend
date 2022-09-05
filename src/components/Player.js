@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import videojs from "video.js";
+// We will load this lazily instead.
+// import videojs from "video.js";
 import { client } from "../utils";
 import "video.js/dist/video-js.css";
 
@@ -13,21 +14,26 @@ const Player = ({ previewUrl }) => {
   );
 
   useEffect(() => {
-    const vjsPlayer = videojs(videoRef.current);
+    let vjsPlayer;
+    (async () => {
 
-    if (!previewUrl) {
-      vjsPlayer.poster(poster);
-      vjsPlayer.src(src);
-    }
-
-    if (previewUrl) {
-      vjsPlayer.src({ type: "video/mp4", src: previewUrl });
-    }
-
-    vjsPlayer.on("ended", () => {
-      client(`${process.env.REACT_APP_BE}/videos/${videoId}/view`);
-    });
-
+      const { default : videojs } = await import('video.js');
+      vjsPlayer = videojs(videoRef.current);
+      
+      if (!previewUrl) {
+        vjsPlayer.poster(poster);
+        vjsPlayer.src(src);
+      }
+      
+      if (previewUrl) {
+        vjsPlayer.src({ type: "video/mp4", src: previewUrl });
+      }
+      
+      vjsPlayer.on("ended", () => {
+        client(`${process.env.REACT_APP_BE}/videos/${videoId}/view`);
+      });
+      
+    })();
     return () => {
       if (vjsPlayer) {
         vjsPlayer.dispose();
